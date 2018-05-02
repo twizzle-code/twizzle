@@ -34,13 +34,14 @@ class Pmatch:
         aChallenges = self.db.get(conf.DB_CHALLENGES_KEY, [])
 
         # test whether name was used before
-        aChallengesSameName = [ch for ch in aChallenges if ch["name"] == sName]
+        aChallengesSameName = [
+            ch for ch in aChallenges if ch["challenge"] == sName]
         if len(aChallengesSameName) != 0:
             raise Exception(
                 "Challenge name %s is already in use. Define an other one. Aborting." % sName)
 
         # append new challenge
-        dicChallenge = {"name": sName, "originalImages": aOriginalImages,
+        dicChallenge = {"challenge": sName, "originalImages": aOriginalImages,
                         "comparativeImages": aComparativeImages, "targetDecisions": aTargetDecisions}
         # adding additional information if given
         if dicMetadata:
@@ -54,7 +55,7 @@ class Pmatch:
 
         # get current challenges from database
         aChallenges = self.db.get(conf.DB_CHALLENGES_KEY, [])
-        aMatches = [ch for ch in aChallenges if ch["name"] == sName]
+        aMatches = [ch for ch in aChallenges if ch["challenge"] == sName]
         if len(aMatches) == 0:
             raise Exception("No challenge named %s found." % sName)
 
@@ -72,7 +73,8 @@ class Pmatch:
     def get_challenge(self, sChallengeName):
         """ getting a single challenge object """
         aChallenges = self.db.get(conf.DB_CHALLENGES_KEY, [])
-        aMatches = [ch for ch in aChallenges if ch["name"] == sChallengeName]
+        aMatches = [ch for ch in aChallenges if ch["challenge"]
+                    == sChallengeName]
         if len(aMatches) == 0:
             raise Exception("No challenge with name %s found." %
                             sChallengeName)
@@ -89,7 +91,7 @@ class Pmatch:
             raise Exception("Parameters are not allowed to be None.")
 
         dicChallenge = self.get_challenge(sChallengeName)
-        sChallengeName = dicChallenge["name"]
+        sChallengeName = dicChallenge["challenge"]
         aOriginalImages = dicChallenge["originalImages"]
         aComparativeImages = dicChallenge["comparativeImages"]
         aTargetDecisions = dicChallenge["targetDecisions"]
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     klaus.clear_challenges()
 
     klaus.add_challenge(sName, aOriginalImages,
-                        aComparativeImages, aTargetDecisions)
+                        aComparativeImages, aTargetDecisions, dicMetadata)
     print(klaus.get_challenges())
 
     # def testalgo(a, b, p1="", p2=""):
