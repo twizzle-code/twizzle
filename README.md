@@ -4,4 +4,8 @@
 It enables you to define matching challenges in order to test different perceptual image hashing algorithms, using several parameters or preprocessing steps.
 
 ## Requirements
-You need to install `sqlite3` and the python module `sqlitedict` via `pip3 install sqlitedict`.
+You need to install `sqlite3` and following python modules:
+
+```
+pip3 install sqlitedict pandas numpy cv2
+```
