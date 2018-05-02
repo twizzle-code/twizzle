@@ -5,6 +5,10 @@ import numpy as np
 from pmatch import Pmatch
 from deviation import hamming_distance
 from util import load_image
+from multiprocessing.pool import ThreadPool
+
+# global config
+NR_OF_THREADS = 10
 
 
 def test_dhash(aOriginalImages, aComparativeImages, lThreshold=0.15, lHashSize=16):
@@ -45,13 +49,24 @@ def test_dhash(aOriginalImages, aComparativeImages, lThreshold=0.15, lHashSize=1
 
 if __name__ == "__main__":
     pm = Pmatch()
+    oPool = ThreadPool(processes=NR_OF_THREADS)
+    aTaskPoolThreads = []
 
     # iterate over thresholds
     for lThreshold in np.arange(0.05, 0.5, 0.05):
         # iterate over hash sizes
         for lHashSize in [8, 16, 32]:
-            # run test
-            pm.run_test("printscan_printer1", test_dhash,
-                        {"lThreshold": lThreshold, "lHashSize": lHashSize})
+            # run test in own thread
+            pThread = oPool.apply_async(
+                pm.run_test, ("printscan_printer1", test_dhash, {"lThreshold": lThreshold, "lHashSize": lHashSize}))
+            aTaskPoolThreads.append(pThread)
+
+            # # NOTE: for better understanding, this is what
+            # # we do here if we would not use threads
+            # pm.run_test("printscan_printer1", test_dhash, {"lThreshold": lThreshold, "lHashSize": lHashSize})
+
+    # catch threads ready
+    for pThread in aTaskPoolThreads:
+        pThread.get()
 
     print(pm.get_tests())
