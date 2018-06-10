@@ -72,3 +72,10 @@ def format_filename(s):
     filename = ''.join(c for c in s if c in valid_chars)
     filename = filename.replace(' ', '_')  # I don't like spaces in filenames.
     return filename
+
+
+def get_filename_without_extension(sPathToFile):
+    """
+    returns the name of a file without fileextension and path
+    """
+    return os.path.splitext(os.path.basename(sPathToFile))[0]
