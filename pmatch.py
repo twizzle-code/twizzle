@@ -5,11 +5,6 @@ import config as conf
 from sqlitedict import SqliteDict
 import numpy as np
 
-# TODO:
-# [ ] challenge definer
-# [ ] run algo
-# [ ] data analyser (opt)
-
 
 class Pmatch:
     def __init__(self):
@@ -107,7 +102,8 @@ class Pmatch:
 
         # calculate errorate
         lTestsetSize = len(aTargetDecisions)
-        lErrors = np.count_nonzero(aDecisions != aTargetDecisions)
+        lErrors = np.count_nonzero(
+            np.array(aDecisions) != np.array(aTargetDecisions))
         dErrorRate = lErrors / lTestsetSize
 
         # fill test object

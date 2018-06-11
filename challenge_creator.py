@@ -15,6 +15,7 @@ from tabulate import tabulate
 from pmatch import Pmatch
 import climenu
 import pandas as pd
+import numpy as np
 import util
 import ast
 import sys
@@ -26,8 +27,21 @@ climenu.settings.text['main_menu_title'] = 'PIHMATCHA - Challenge creator\n=====
 climenu.settings.back_values = ['']
 
 
-# define menu layout
+# helper functions
+def show_challenges_helper(bShowIndex=False):
+    dfChallenges = pd.DataFrame(pm.get_challenges())
+    dfChallenges["challenge_set_size"] = dfChallenges.apply(
+        lambda row: len(row["targetDecisions"]), axis=1)
+    dfChallenges = dfChallenges.drop(
+        labels=["originalImages", "comparativeImages", "targetDecisions"],
+        axis=1)
+    dfChallenges.replace(np.nan, "", inplace=True)
+    print(tabulate(dfChallenges, headers='keys',
+                   tablefmt='psql', showindex="never" if not bShowIndex else "always"))
+    return dfChallenges["challenge"].tolist()
 
+
+# define menu layout
 
 @climenu.group(title="Add challenge")
 def add_challenge_group():
@@ -36,19 +50,29 @@ def add_challenge_group():
 
 @climenu.menu(title="Show challenges")
 def show_challenges():
-    dfChallenges = pd.DataFrame(pm.get_challenges())
-    dfChallenges["challenge_set_size"] = dfChallenges.apply(
-        lambda row: len(row["targetDecisions"]), axis=1)
-    dfChallenges = dfChallenges.drop(
-        labels=["originalImages", "comparativeImages", "targetDecisions"],
-        axis=1)
-    print(tabulate(dfChallenges, headers='keys',
-                   tablefmt='psql', showindex="never"))
+    show_challenges_helper(False)
 
 
 @climenu.menu(title="Remove challenge")
 def remove_challenges():
-    pass
+    challengeNameList = show_challenges_helper(True)
+    numberOfChallenges = len(challengeNameList)
+    print("Which challenge would you like to delete?")
+    while True:
+        deleteDecision = input("[0-%i, Q]: " % (numberOfChallenges - 1))
+        if deleteDecision == "" or deleteDecision.lower() == "q":
+            break
+        else:
+            try:
+                deleteDecision = int(deleteDecision)
+            except:
+                continue
+            if (0 <= deleteDecision < numberOfChallenges):
+                deleteDecisionChallengeName = challengeNameList[deleteDecision]
+                pm.del_challenge(deleteDecisionChallengeName)
+                print("Deleted challenge %s ... DONE" %
+                      deleteDecisionChallengeName)
+                break
 
 
 @add_challenge_group.menu(title='Add custom challenge')
@@ -56,7 +80,7 @@ def add_custom_challenges():
     # Path to original images
     # path to comparative images
     # rule: "<imageName>_[S,D]"
-    # TODO add special attributes
+    # add special attributes
 
     # check list of challenges already defined
     challengeNamesAlreadyDefined = [
@@ -153,6 +177,8 @@ def add_custom_challenges():
     # save challenge object in db
     pm.add_challenge(challengeName, originalImages,
                      comparativeImages, targetDecisions, attributesDict)
+
+    print("Challenge %s was added ..." % challengeName)
 
 
 @add_challenge_group.menu(title="Add attack challenge")
