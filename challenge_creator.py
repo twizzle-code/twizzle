@@ -181,11 +181,71 @@ def add_custom_challenges():
     print("Challenge %s was added ..." % challengeName)
 
 
-@add_challenge_group.menu(title="Add attack challenge")
+@add_challenge_group.group(title="Add attack challenge")
 def attack_challenge_group():
     pass
+
+# TODO: take set of images
+
+
+@attack_challenge_group.menu(title="Rotation (cropped)")
+def attack_rotation_cropped():
+    print("I am cropped rotation")
+
+
+@attack_challenge_group.menu(title="Rotation (fitted)")
+def attack_rotation_fitted():
+    print("I am fitted rotation")
+
+
+@attack_challenge_group.menu(title="Crop (uniform)")
+def attack_crop_uniform():
+    print("I am crop uniform")
+
+
+@attack_challenge_group.menu(title="Crop (nonuniform)")
+def attack_crop_nonuniform():
+    print("I am crop nonuniform")
+
+
+@attack_challenge_group.menu(title="Overlay")
+def attack_overlay():
+    print("I am overlay")
+
+
+@attack_challenge_group.menu(title="JPEG Quality")
+def attack_jpeg_quality():
+    print("I am JPEG quality")
+
+
+@attack_challenge_group.menu(title="Speckle Noise")
+def attack_speckle_noise():
+    print("I am speckle_noise")
+
+
+@attack_challenge_group.menu(title="Salt and Pepper Noise")
+def attack_salt_and_pepper_noise():
+    print("I am salt_and_pepper_noise")
+
+
+@attack_challenge_group.menu(title="Gauss Noise")
+def attack_gauss_noise():
+    print("I am gauss_noise")
+
+
+@attack_challenge_group.menu(title="Scale")
+def attack_scale():
+    print("I am scale")
+
+
+@attack_challenge_group.menu(title="Contrast")
+def attack_contrast():
+    print("I am contrast")
 
 
 if __name__ == '__main__':
     pm = Pmatch()
     climenu.run()
+
+# TODO: add shuffle challenge (from set of images x match and 1-x do not
+# match; random generated)
