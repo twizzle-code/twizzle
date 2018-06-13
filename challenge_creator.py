@@ -41,8 +41,172 @@ def show_challenges_helper(bShowIndex=False):
     return dfChallenges["challenge"].tolist()
 
 
-# define menu layout
+def get_challenge_name():
+    # check list of challenges already defined
+    challengeNamesAlreadyDefined = [
+        challengeObject["challenge"] for challengeObject in pm.get_challenges()]
 
+    # get name of challenge
+    print('\nSpecify a name of the challenge:')
+    challengeName = ""
+    while True:
+        challengeName = input("Challenge name: ")
+        if len(challengeName) == 0:
+            print("\nName might not be empty")
+        elif challengeName in challengeNamesAlreadyDefined:
+            print(
+                "\n Name %s is already specified in the database. Choose another one." % challengeName)
+        else:
+            break
+    return challengeName
+
+
+def get_source_image_path(target="original"):
+    if target == "original":
+        instruction = '\nSpecify a path to the original images.'
+        inputLabel = "Original Images: "
+    elif target == "comparative":
+        instruction = '\nSpecify a path to the comparative images.'
+        inputLabel = "Comparative Images: "
+    else:
+        raise Exception('invalid value for target: %s' % target)
+
+    print(instruction)
+    while True:
+        imagesPath = util.escape_home_in_path(
+            input(inputLabel))
+        if util.check_if_path_exists(imagesPath):
+            # return all images in path as sorted list
+            return sorted(util.list_all_images_in_directory(imagesPath))
+        else:
+            print("path %s is not existend" % imagesPath)
+            correctionDecision = input(
+                "would you like to correct it or quit [c/Q]: ")
+            print(correctionDecision)
+            if not correctionDecision.lower() == "c":
+                sys.exit(1)
+
+
+def get_target_image_path():
+    print("Specify a target path for the attacked images.")
+    while True:
+        targetPath = util.escape_home_in_path(
+            input("Target path: "))
+        if util.check_if_path_exists(targetPath):
+            # return all images in path as sorted list
+            return targetPath
+        else:
+            print("path %s is not existend" % targetPath)
+            correctionDecision = input(
+                "would you like to correct it or quit [c/Q]: ")
+            print(correctionDecision)
+            if not correctionDecision.lower() == "c":
+                sys.exit(1)
+
+
+def get_range_parameter(parameterName, paramMinLimit, paramMaxLimit):
+    # ask for min
+    # ask for max // will not reach max
+    # ask for step
+    minFloat = 0.0
+    maxFloat = 0.0
+    stepFloat = 0.0
+    print("Specify the range for %s [%s, %s]:" % (
+        parameterName, str(paramMinLimit), str(paramMaxLimit)))
+    while True:
+        minString = input("min (<=): ")
+        try:
+            minFloat = float(minString)
+        except:
+            print("input is no number")
+            continue
+        if (paramMinLimit <= minFloat <= paramMaxLimit):
+            break
+        else:
+            print("input %f is bigger or smaller as domain of attack[%s, %s]" % (
+                minFloat, str(paramMinLimit), str(paramMaxLimit)))
+            continue
+
+    while True:
+        maxString = input("max (<): ")
+        try:
+            maxFloat = float(maxString)
+        except:
+            print("input is no number")
+            continue
+        if (paramMinLimit <= maxFloat <= paramMaxLimit):
+            break
+        else:
+            print("input %f is bigger or smaller as domain of attack [%s, %s]" % (
+                maxFloat, str(paramMinLimit), str(paramMaxLimit)))
+            continue
+
+    while True:
+        stepString = input("step : ")
+        try:
+            stepFloat = float(stepString)
+        except:
+            print("input is no number")
+            continue
+        if (paramMinLimit <= stepFloat <= paramMaxLimit):
+            break
+        else:
+            print("input %f is bigger or smaller as domain of attack [%s, %s]" % (
+                stepFloat, str(paramMinLimit), str(paramMaxLimit)))
+            continue
+
+    return np.arange(minFloat, maxFloat, stepFloat)
+
+
+def save_attacked_image(image, attackedImagesTargetPath, imageName, imageExtension):
+    util.save_image(image, "%s/%s.%s" %
+                    (attackedImagesTargetPath, imageName, imageExtension))
+
+
+def rotation_hook(originalImagesPathes, attackedImagesTargetPath):
+    print("I am rotation hook")
+    # TODO: add attack name and range/set of parameters when saving attacked
+    # images
+
+    parameterRange = get_range_parameter("angle in degree", 0, 360)
+
+    # TODO continue here
+    print(parameterRange)
+
+    # apply attack
+    # save image
+
+    return ["orig/i1.png", "orig/i1.png", "orig/i1.png", "orig/i2.png", "orig/i2.png", "orig/i2.png", "orig/i3.png", "orig/i3.png", "orig/i3.png"], ["attacked/rot_scaled_0-2/i1_0.png", "attacked/rot_scaled_0-20/i1_1.png", "attacked/rot_scaled_0-2/i1_2.png", "attacked/rot_scaled_0-2/i2_0.png", "attacked/rot_scaled_0-20/i2_1.png", "attacked/rot_scaled_0-2/i2_2.png", "attacked/rot_scaled_0-2/i3_0.png", "attacked/rot_scaled_0-20/i3_1.png", "attacked/rot_scaled_0-2/i3_2.png"], [True, True, True, True, True, True, True, True, True], {}
+
+
+def attack_challenge_creator(attackHook):
+    # get challenge name
+    # select basic images
+    # select save path for attacked images
+    # attack hook hook(originalImagesList, attackedImagesTargetPath) => originals, comparatives, decisions, otherStuff (object..decompose to challenge object)
+    #    define range/ set of parameters
+    #    for originalImage:
+    #       for rangeItem/setItem:
+    #           attack
+    #           save => pathToImage (relative)
+    # save challenge in db
+
+    challengeName = get_challenge_name()
+
+    originalImagesPathes = get_source_image_path(target="original")
+
+    attackedImagesTargetPath = get_target_image_path()
+
+    originalImages, comparativeImages, targetDecisions, metaData = attackHook(
+        originalImagesPathes, attackedImagesTargetPath)
+
+    pm.add_challenge(challengeName, originalImages,
+                     comparativeImages, targetDecisions, metaData)
+
+    print("Added attack challenge")
+
+
+# define menu layout
 @climenu.group(title="Add challenge")
 def add_challenge_group():
     pass
@@ -82,56 +246,13 @@ def add_custom_challenges():
     # rule: "<imageName>_[S,D]"
     # add special attributes
 
-    # check list of challenges already defined
-    challengeNamesAlreadyDefined = [
-        challengeObject["challenge"] for challengeObject in pm.get_challenges()]
-
-    # get name of challenge
-    print('\nSpecify a name of the challenge:')
-    challengeName = ""
-    while True:
-        challengeName = input("Challenge name: ")
-        if len(challengeName) == 0:
-            print("\nName might not be empty")
-        elif challengeName in challengeNamesAlreadyDefined:
-            print(
-                "\n Name %s is already specified in the database. Choose another one." % challengeName)
-        else:
-            break
+    challengeName = get_challenge_name()
 
     # get path to original images
-    print('\nSpecify a path to the original images.')
-    while True:
-        originalImagesPath = util.escape_home_in_path(
-            input("Original Images: "))
-        if util.check_if_path_exists(originalImagesPath):
-            break
-        else:
-            print("path %s is not existend" % originalImagesPath)
-            correctionDecision = input(
-                "would you like to correct it or quit [c/Q]: ")
-            print(correctionDecision)
-            if not correctionDecision.lower() == "c":
-                sys.exit(1)
+    originalImages = get_source_image_path(target="original")
 
     # get path to comparative images
-    print('\nSpecify a path to the comparative images.')
-    while True:
-        comparativeImagesPath = util.escape_home_in_path(
-            input("Comparative Images: "))
-        if util.check_if_path_exists(comparativeImagesPath):
-            break
-        else:
-            print("path %s is not existend" % comparativeImagesPath)
-            correctionDecision = input(
-                "would you like to correct it or quit [c/Q]: ")
-            if not correctionDecision.lower() == "c":
-                sys.exit(1)
-
-    # parse all images
-    originalImages = util.list_all_images_in_directory(originalImagesPath)
-    comparativeImages = util.list_all_images_in_directory(
-        comparativeImagesPath)
+    comparativeImages = get_source_image_path(target="comparative")
 
     # filter originals ans comparatives if they are in the same folder
     regMatcher = r"_[SD]\."
@@ -139,10 +260,6 @@ def add_custom_challenges():
         imgPath for imgPath in originalImages if not re.search(regMatcher, imgPath)]
     comparativeImages = [
         imgPath for imgPath in comparativeImages if re.search(regMatcher, imgPath)]
-
-    # sort lists
-    originalImages = sorted(originalImages)
-    comparativeImages = sorted(comparativeImages)
 
     # check whether every original has a comparative
     originalImageNamesSet = set([util.get_filename_without_extension(
@@ -185,12 +302,14 @@ def add_custom_challenges():
 def attack_challenge_group():
     pass
 
+
 # TODO: take set of images
 
 
 @attack_challenge_group.menu(title="Rotation (cropped)")
 def attack_rotation_cropped():
     print("I am cropped rotation")
+    attack_challenge_creator(rotation_hook)
 
 
 @attack_challenge_group.menu(title="Rotation (fitted)")
