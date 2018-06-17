@@ -13,9 +13,10 @@
 from functools import partial
 from tabulate import tabulate
 from pmatch import Pmatch
-import climenu
+import attacks as atk
 import pandas as pd
 import numpy as np
+import climenu
 import util
 import ast
 import sys
@@ -155,28 +156,47 @@ def get_range_parameter(parameterName, paramMinLimit, paramMaxLimit):
                 stepFloat, str(paramMinLimit), str(paramMaxLimit)))
             continue
 
-    return np.arange(minFloat, maxFloat, stepFloat)
+    rangeMetadata = {"min": minFloat, "max": maxFloat, "step": stepFloat}
+
+    return np.arange(minFloat, maxFloat, stepFloat), rangeMetadata
 
 
 def save_attacked_image(image, attackedImagesTargetPath, imageName, imageExtension):
-    util.save_image(image, "%s/%s.%s" %
-                    (attackedImagesTargetPath, imageName, imageExtension))
+    savePath = "%s/%s.%s" % (attackedImagesTargetPath,
+                             imageName, imageExtension)
+    util.save_image(image, savePath)
+    return savePath
 
 
-def rotation_hook(originalImagesPathes, attackedImagesTargetPath):
-    print("I am rotation hook")
-    # TODO: add attack name and range/set of parameters when saving attacked
-    # images
+def rotation_cropped_hook(originalImagesPathes, attackedImagesTargetPath):
 
-    parameterRange = get_range_parameter("angle in degree", 0, 360)
+    attackName = "rotation_cropped"
+    rotationAngles, rangeMetadata = get_range_parameter(
+        "angle in degree", 0, 360)
 
     # TODO continue here
-    print(parameterRange)
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for rotationAngle in rotationAngles:
+            # apply attack
+            attackedImage = atk.rotation_cropped(
+                originalImage, dRotationAngle=rotationAngle)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(rotationAngle))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
 
-    # apply attack
-    # save image
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
 
-    return ["orig/i1.png", "orig/i1.png", "orig/i1.png", "orig/i2.png", "orig/i2.png", "orig/i2.png", "orig/i3.png", "orig/i3.png", "orig/i3.png"], ["attacked/rot_scaled_0-2/i1_0.png", "attacked/rot_scaled_0-20/i1_1.png", "attacked/rot_scaled_0-2/i1_2.png", "attacked/rot_scaled_0-2/i2_0.png", "attacked/rot_scaled_0-20/i2_1.png", "attacked/rot_scaled_0-2/i2_2.png", "attacked/rot_scaled_0-2/i3_0.png", "attacked/rot_scaled_0-20/i3_1.png", "attacked/rot_scaled_0-2/i3_2.png"], [True, True, True, True, True, True, True, True, True], {}
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
 
 
 def attack_challenge_creator(attackHook):
@@ -309,7 +329,7 @@ def attack_challenge_group():
 @attack_challenge_group.menu(title="Rotation (cropped)")
 def attack_rotation_cropped():
     print("I am cropped rotation")
-    attack_challenge_creator(rotation_hook)
+    attack_challenge_creator(rotation_cropped_hook)
 
 
 @attack_challenge_group.menu(title="Rotation (fitted)")
