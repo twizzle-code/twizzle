@@ -17,6 +17,7 @@ import attacks as atk
 import pandas as pd
 import numpy as np
 import climenu
+import math
 import util
 import ast
 import sys
@@ -757,6 +758,71 @@ def add_custom_challenges():
     print("Challenge %s was added ..." % challengeName)
 
 
+@add_challenge_group.menu(title='Add shuffled challenge')
+def add_shuffle_challenges():
+    print("shuffled challenge")
+
+    # take a set of images and shuffle them to groups of matching and not
+    # matching images
+
+    challengeName = get_challenge_name()
+
+    originalImagesPathes = get_source_image_path(target="original")
+
+    # get percent of shuffled images
+    paramMinLimit = 0
+    paramMaxLimit = 1
+    originalMatchingDataRatio = None
+    print("Specify the ratio of matching images [%s, %s]:" % (
+        str(paramMinLimit), str(paramMaxLimit)))
+    while True:
+        ratioString = input("ratio: ")
+        try:
+            ratioFloat = float(ratioString)
+        except:
+            print("input is no number")
+            continue
+        if (paramMinLimit <= ratioFloat <= paramMaxLimit):
+            originalMatchingDataRatio = ratioFloat
+            break
+        else:
+            print("input %f is bigger or smaller as domain of ratio[%s, %s]" % (
+                ratioFloat, str(paramMinLimit), str(paramMaxLimit)))
+            continue
+
+    numberOfOriginalImages = len(originalImagesPathes)
+
+    np.random.shuffle(originalImagesPathes)
+    (imagesToMatch, imagesToShuffle) = np.array_split(originalImagesPathes, [
+        math.floor(numberOfOriginalImages * originalMatchingDataRatio)])
+
+    originalImages = []
+    comparativeImages = []
+    targetDecisions = []
+
+    # handle matching images
+    for matchingImage in imagesToMatch:
+        originalImages.append(matchingImage)
+        comparativeImages.append(matchingImage)
+        targetDecisions.append(True)
+
+    # handle not matching images
+    for notMatchingImage in imagesToShuffle:
+        originalImages.append(notMatchingImage)
+        targetDecisions.append(False)
+        while True:
+            randomlyChosenComparativeImage = np.random.choice(
+                originalImagesPathes)
+            if(notMatchingImage != randomlyChosenComparativeImage):
+                comparativeImages.append(randomlyChosenComparativeImage)
+                break
+
+    pm.add_challenge(challengeName, originalImages,
+                     comparativeImages, targetDecisions)
+
+    print("Added shuffled challenge")
+
+
 @add_challenge_group.group(title="Add attack challenge")
 def attack_challenge_group():
     pass
@@ -843,6 +909,7 @@ def attack_gamma():
 if __name__ == '__main__':
     pm = Pmatch()
     climenu.run()
+
 
 # TODO: add shuffle challenge (from set of images x match and 1-x do not
 # match; random generated)
