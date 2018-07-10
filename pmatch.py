@@ -14,7 +14,7 @@ class Pmatch:
         """ adds a challenge under the given name to the database """
 
         # catch wrong parameters
-        if (not sName) or (not aOriginalImages) or (not aComparativeImages) or (not aTargetDecisions):
+        if (not sName) or (aOriginalImages is None) or (aComparativeImages is None) or (aTargetDecisions is None):
             raise Exception("Parameters can not be None.")
         if not(len(aOriginalImages) == len(aComparativeImages) == len(aTargetDecisions)):
             raise Exception(
@@ -22,7 +22,7 @@ class Pmatch:
         if not (all(isinstance(x, str) for x in aOriginalImages) and all(isinstance(x, str) for x in aComparativeImages)):
             raise Exception(
                 "All images have to be defined as path given as string.")
-        if not all(isinstance(x, bool) for x in aTargetDecisions):
+        if (not all(isinstance(x, bool) for x in aTargetDecisions)) and not isinstance(aTargetDecisions, np.ndarray) and not (aTargetDecisions.dtype == np.dtype("bool")):
             raise Exception("The target decisions have to be boolean only.")
 
         # get current challenges from database

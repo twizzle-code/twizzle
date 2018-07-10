@@ -168,13 +168,14 @@ def save_attacked_image(image, attackedImagesTargetPath, imageName, imageExtensi
     return savePath
 
 
+########## attack hooks ##############################
+
 def rotation_cropped_hook(originalImagesPathes, attackedImagesTargetPath):
 
     attackName = "rotation_cropped"
     rotationAngles, rangeMetadata = get_range_parameter(
         "angle in degree", 0, 360)
 
-    # TODO continue here
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
@@ -197,6 +198,444 @@ def rotation_cropped_hook(originalImagesPathes, attackedImagesTargetPath):
         len(originalImagesPathesResult), True, dtype=bool)
 
     return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def rotation_fitted_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "rotation_fitted"
+    rotationAngles, rangeMetadata = get_range_parameter(
+        "angle in degree", 0, 360)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for rotationAngle in rotationAngles:
+            # apply attack
+            attackedImage = atk.rotation(
+                originalImage,  dRotationAngle=rotationAngle, bFit=True, tpBorderValue=(0, 0, 0))
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(rotationAngle))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def crop_uniform_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "crop_uniform"
+    cropSteps, rangeMetadata = get_range_parameter(
+        "crop percent of the image from top, left, bottom, right", 0, 0.5)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for cropStep in cropSteps:
+            # apply attack
+            attackedImage = atk.crop_percentage(
+                originalImage,  tpSlice=(cropStep, cropStep, cropStep, cropStep))
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(cropStep))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def crop_nonuniform_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "crop_nonuniform"
+
+    cropSets = []
+    paramMinLimit = 0
+    paramMaxLimit = 1
+    print("Specify crop percentage (top, left, bottom, right)")
+    while True:
+        edgesDic = {"top": None, "left": None, "bottom": None, "right": None}
+        for edgeKey in edgesDic:
+            while True:
+                valueString = input(edgeKey + ": ")
+                try:
+                    edgesDic[edgeKey] = float(valueString)
+                except:
+                    print("input is no number")
+                    continue
+                if (paramMinLimit <= edgesDic[edgeKey] <= paramMaxLimit):
+                    break
+                else:
+                    print("input %f is bigger or smaller as domain of attack[%s, %s]" % (
+                        edgesDic[edgeKey], str(paramMinLimit), str(paramMaxLimit)))
+                    continue
+        if (edgesDic["top"] + edgesDic["bottom"]) <= 1.0 and (edgesDic["left"] + edgesDic["right"] <= 1.0):
+            cropSets.append(
+                (edgesDic["top"], edgesDic["left"], edgesDic["bottom"], edgesDic["right"]))
+        else:
+            print("left + right and top + bottom have to be <= 1.0 ... once again")
+            continue
+        print("Would you like to add (a) another set of parameters or continue (c)?")
+        addAdditionalParameters = input("[a/C]: ")
+        if(addAdditionalParameters.lower() != "a"):
+            break
+
+    parameterSetMetadata = {"cropSets": cropSets}
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for cropSet in cropSets:
+            # apply attack
+            attackedImage = atk.crop_percentage(
+                originalImage,  tpSlice=cropSet)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, util.format_filename(str(cropSet)))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterSetMetadata": parameterSetMetadata}
+
+
+def jpeg_quality_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "JPEG_quality"
+    qualitySteps, rangeMetadata = get_range_parameter(
+        "JPEG quality in percent", 0, 100)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for qualityStep in qualitySteps:
+            # apply attack
+            attackedImage = atk.jpeg_compression(
+                originalImage,  lJPEGQuality=qualityStep)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(qualityStep))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def speckle_noise_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "speckle_noise"
+    sigmaSteps, rangeMetadata = get_range_parameter(
+        "sigma", 0, 1)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for sigmaStep in sigmaSteps:
+            # apply attack
+            attackedImage = atk.speckle_noise(originalImage,  dSigma=sigmaStep)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(sigmaStep))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def salt_pepper_noise_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "salt_pepper_noise"
+    sigmaSteps, rangeMetadata = get_range_parameter(
+        "sigma", 0, 1)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for sigmaStep in sigmaSteps:
+            # apply attack
+            attackedImage = atk.salt_and_pepper_noise(
+                originalImage,  dAmount=sigmaStep)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(sigmaStep))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def gauss_noise_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "gauss_noise"
+    sigmaSteps, rangeMetadata = get_range_parameter(
+        "sigma", 0, 1)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for sigmaStep in sigmaSteps:
+            # apply attack
+            attackedImage = atk.gauss_noise(
+                originalImage,  dSigma=sigmaStep)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(sigmaStep))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def scale_uniform_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "scale_uniform"
+    scaleFactors, rangeMetadata = get_range_parameter(
+        "scale factor", 0, 10)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for scaleFactor in scaleFactors:
+            # apply attack
+            attackedImage = atk.scale(
+                originalImage,  lScalefactorX=scaleFactor, lScaleFactorY=scaleFactor)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(scaleFactor))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def scale_nonuniform_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "scale_nonuniform"
+
+    scaleSets = []
+    paramMinLimit = 0
+    paramMaxLimit = 10
+    print("Specify scale set (x, y)")
+    while True:
+        scaleDic = {"x": None, "y": None}
+        for scaleKey in scaleDic:
+            while True:
+                valueString = input(scaleKey + ": ")
+                try:
+                    scaleDic[scaleKey] = float(valueString)
+                except:
+                    print("input is no number")
+                    continue
+                if (paramMinLimit <= scaleDic[scaleKey] <= paramMaxLimit):
+                    break
+                else:
+                    print("input %f is bigger or smaller as domain of attack[%s, %s]" % (
+                        scaleDic[scaleKey], str(paramMinLimit), str(paramMaxLimit)))
+                    continue
+
+        scaleSets.append(
+            {"lScalefactorX": scaleDic["x"], "lScaleFactorY": scaleDic["y"]})
+
+        print("Would you like to add (a) another set of parameters or continue (c)?")
+        addAdditionalParameters = input("[a/C]: ")
+        if(addAdditionalParameters.lower() != "a"):
+            break
+
+    parameterSetMetadata = {"scaleSets": scaleSets}
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for scaleSet in scaleSets:
+            # apply attack
+            attackedImage = atk.scale(
+                originalImage,  **scaleSet)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, util.format_filename(str(scaleSet)))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterSetMetadata": parameterSetMetadata}
+
+
+def contrast_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "contrast"
+    contrastFactors, rangeMetadata = get_range_parameter(
+        "contrast factor", -128, 128)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for contrastFactor in contrastFactors:
+            # apply attack
+            attackedImage = atk.contrast(
+                originalImage,  lContrast=contrastFactor)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(contrastFactor))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def gamma_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "gamma"
+    gammaFactors, rangeMetadata = get_range_parameter(
+        "gamma factor", 0, 10)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+        for gammaFactor in gammaFactors:
+            # apply attack
+            attackedImage = atk.gamma_adjustment(
+                originalImage,  dGamma=gammaFactor)
+            imageName = "%s_%s_%s" % (
+                originalImageName, attackName, str(gammaFactor))
+            # save image
+            attackedImagePath = save_attacked_image(
+                attackedImage, attackedImagesTargetPath, imageName, "png")
+            originalImagesPathesResult.append(originalImagePath)
+            attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "parameterRangeMetadata": rangeMetadata}
+
+
+def overlay_hook(originalImagesPathes, attackedImagesTargetPath):
+
+    attackName = "overlay"
+
+    print("\nSpecify the full path to the overlay image.")
+    overlayImage = None
+    overlayImageFilePath = None
+    while True:
+        overlayImageFilePath = util.escape_home_in_path(
+            input("Overlay image: "))
+        if util.check_if_file_exists(overlayImageFilePath):
+            # return all images in path as sorted list
+            try:
+                overlayImage = util.load_image(overlayImageFilePath)
+                break
+            except:
+                print("%s seems to be no image file." % overlayImageFilePath)
+        else:
+            print("image %s is not existend" % overlayImageFilePath)
+            correctionDecision = input(
+                "would you like to correct it or quit [c/Q]: ")
+            print(correctionDecision)
+            if not correctionDecision.lower() == "c":
+                sys.exit(1)
+
+    originalImagesPathesResult = []
+    attackedImagesPathesResult = []
+    for originalImagePath in originalImagesPathes:
+        originalImage = util.load_image(originalImagePath)
+        originalImageName = util.get_filename_without_extension(
+            originalImagePath)
+
+        # apply attack
+        attackedImage = atk.blend_pattern(
+            originalImage,  aPatternImage=overlayImage)
+        imageName = "%s_%s_%s" % (
+            originalImageName, attackName, util.get_filename_without_extension(overlayImageFilePath))
+        # save image
+        attackedImagePath = save_attacked_image(
+            attackedImage, attackedImagesTargetPath, imageName, "png")
+        originalImagesPathesResult.append(originalImagePath)
+        attackedImagesPathesResult.append(attackedImagePath)
+
+    targetDecisions = np.full(
+        len(originalImagesPathesResult), True, dtype=bool)
+
+    return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "blend_image": overlayImageFilePath}
 
 
 def attack_challenge_creator(attackHook):
@@ -323,9 +762,6 @@ def attack_challenge_group():
     pass
 
 
-# TODO: take set of images
-
-
 @attack_challenge_group.menu(title="Rotation (cropped)")
 def attack_rotation_cropped():
     print("I am cropped rotation")
@@ -335,51 +771,73 @@ def attack_rotation_cropped():
 @attack_challenge_group.menu(title="Rotation (fitted)")
 def attack_rotation_fitted():
     print("I am fitted rotation")
+    attack_challenge_creator(rotation_fitted_hook)
 
 
 @attack_challenge_group.menu(title="Crop (uniform)")
 def attack_crop_uniform():
     print("I am crop uniform")
+    attack_challenge_creator(crop_uniform_hook)
 
 
 @attack_challenge_group.menu(title="Crop (nonuniform)")
 def attack_crop_nonuniform():
     print("I am crop nonuniform")
+    attack_challenge_creator(crop_nonuniform_hook)
 
 
 @attack_challenge_group.menu(title="Overlay")
 def attack_overlay():
     print("I am overlay")
+    attack_challenge_creator(overlay_hook)
 
 
 @attack_challenge_group.menu(title="JPEG Quality")
 def attack_jpeg_quality():
     print("I am JPEG quality")
+    attack_challenge_creator(jpeg_quality_hook)
 
 
 @attack_challenge_group.menu(title="Speckle Noise")
 def attack_speckle_noise():
     print("I am speckle_noise")
+    attack_challenge_creator(speckle_noise_hook)
 
 
 @attack_challenge_group.menu(title="Salt and Pepper Noise")
 def attack_salt_and_pepper_noise():
     print("I am salt_and_pepper_noise")
+    attack_challenge_creator(salt_pepper_noise_hook)
 
 
 @attack_challenge_group.menu(title="Gauss Noise")
 def attack_gauss_noise():
     print("I am gauss_noise")
+    attack_challenge_creator(gauss_noise_hook)
 
 
-@attack_challenge_group.menu(title="Scale")
-def attack_scale():
-    print("I am scale")
+@attack_challenge_group.menu(title="Scale (uniform)")
+def attack_scale_uniform():
+    print("I am scale (uniform)")
+    attack_challenge_creator(scale_uniform_hook)
+
+
+@attack_challenge_group.menu(title="Scale (nonuniform)")
+def attack_scale_nonuniform():
+    print("I am scale (nonuniform)")
+    attack_challenge_creator(scale_nonuniform_hook)
 
 
 @attack_challenge_group.menu(title="Contrast")
 def attack_contrast():
     print("I am contrast")
+    attack_challenge_creator(contrast_hook)
+
+
+@attack_challenge_group.menu(title="Gamma")
+def attack_gamma():
+    print("I am gamma")
+    attack_challenge_creator(gamma_hook)
 
 
 if __name__ == '__main__':

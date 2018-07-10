@@ -63,7 +63,8 @@ if __name__ == "__main__":
 
             # # NOTE: for better understanding, this is what
             # # we do here if we would not use threads
-            # pm.run_test("printscan_printer1", test_dhash, {"lThreshold": lThreshold, "lHashSize": lHashSize})
+            # pm.run_test("printscan_printer1", test_dhash, {"lThreshold":
+            # lThreshold, "lHashSize": lHashSize})
 
     # catch threads ready
     for pThread in aTaskPoolThreads:
