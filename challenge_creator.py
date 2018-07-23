@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 
-# path of original images
-# path of attacked images
-# name of attacked images has to fit rule (_n.* ... means no-match)
 
-# Reality attacks
-# - define name
-# - folder of originals
-# - folder of targets
-# - naming schema
-# from terminaltables import AsciiTable
-from functools import partial
 from tabulate import tabulate
 from pmatch import Pmatch
 import attacks as atk
@@ -31,7 +21,10 @@ climenu.settings.back_values = ['']
 
 # helper functions
 def show_challenges_helper(bShowIndex=False):
-    dfChallenges = pd.DataFrame(pm.get_challenges())
+    aChallenges = pm.get_challenges()
+    if len(aChallenges) == 0:
+        return []
+    dfChallenges = pd.DataFrame(aChallenges)
     dfChallenges["challenge_set_size"] = dfChallenges.apply(
         lambda row: len(row["targetDecisions"]), axis=1)
     dfChallenges = dfChallenges.drop(
@@ -674,29 +667,33 @@ def add_challenge_group():
 
 @climenu.menu(title="Show challenges")
 def show_challenges():
-    show_challenges_helper(False)
+    if len(show_challenges_helper(False)) == 0:
+        print("No challenges defined yet...")
 
 
 @climenu.menu(title="Remove challenge")
 def remove_challenges():
     challengeNameList = show_challenges_helper(True)
     numberOfChallenges = len(challengeNameList)
-    print("Which challenge would you like to delete?")
-    while True:
-        deleteDecision = input("[0-%i, Q]: " % (numberOfChallenges - 1))
-        if deleteDecision == "" or deleteDecision.lower() == "q":
-            break
-        else:
-            try:
-                deleteDecision = int(deleteDecision)
-            except:
-                continue
-            if (0 <= deleteDecision < numberOfChallenges):
-                deleteDecisionChallengeName = challengeNameList[deleteDecision]
-                pm.del_challenge(deleteDecisionChallengeName)
-                print("Deleted challenge %s ... DONE" %
-                      deleteDecisionChallengeName)
+    if numberOfChallenges == 0:
+        print("No challenges defined yet...")
+    else:
+        print("Which challenge would you like to delete?")
+        while True:
+            deleteDecision = input("[0-%i, Q]: " % (numberOfChallenges - 1))
+            if deleteDecision == "" or deleteDecision.lower() == "q":
                 break
+            else:
+                try:
+                    deleteDecision = int(deleteDecision)
+                except:
+                    continue
+                if (0 <= deleteDecision < numberOfChallenges):
+                    deleteDecisionChallengeName = challengeNameList[deleteDecision]
+                    pm.del_challenge(deleteDecisionChallengeName)
+                    print("Deleted challenge %s ... DONE" %
+                          deleteDecisionChallengeName)
+                    break
 
 
 @add_challenge_group.menu(title='Add custom challenge')
@@ -909,7 +906,3 @@ def attack_gamma():
 if __name__ == '__main__':
     pm = Pmatch()
     climenu.run()
-
-
-# TODO: add shuffle challenge (from set of images x match and 1-x do not
-# match; random generated)
