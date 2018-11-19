@@ -2,13 +2,11 @@
 
 
 from tabulate import tabulate
-from pmatch import Pmatch
-import attacks as atk
+from pihmatch import Pihmatch, attacks as atk, utils
 import pandas as pd
 import numpy as np
 import climenu
 import math
-import util
 import ast
 import sys
 import re
@@ -68,11 +66,11 @@ def get_source_image_path(target="original"):
 
     print(instruction)
     while True:
-        imagesPath = util.escape_home_in_path(
+        imagesPath = utils.escape_home_in_path(
             input(inputLabel))
-        if util.check_if_path_exists(imagesPath):
+        if utils.check_if_path_exists(imagesPath):
             # return all images in path as sorted list
-            return sorted(util.list_all_images_in_directory(imagesPath))
+            return sorted(utils.list_all_images_in_directory(imagesPath))
         else:
             print("path %s is not existend" % imagesPath)
             correctionDecision = input(
@@ -84,19 +82,19 @@ def get_source_image_path(target="original"):
 
 def get_target_image_path():
     print("Specify a target path for the attacked images.")
-    while True:
-        targetPath = util.escape_home_in_path(
-            input("Target path: "))
-        if util.check_if_path_exists(targetPath):
-            # return all images in path as sorted list
-            return targetPath
+
+    targetPath = utils.escape_home_in_path(
+        input("Target path: "))
+    if not utils.check_if_path_exists(targetPath):
+        print("path %s is not existend" % targetPath)
+        correctionDecision = input(
+            "would you like to create it or quit [c/Q]: ")
+        print(correctionDecision)
+        if not correctionDecision.lower() == "c":
+            sys.exit(1)
         else:
-            print("path %s is not existend" % targetPath)
-            correctionDecision = input(
-                "would you like to correct it or quit [c/Q]: ")
-            print(correctionDecision)
-            if not correctionDecision.lower() == "c":
-                sys.exit(1)
+            utils.create_path(targetPath)
+    return targetPath
 
 
 def get_range_parameter(parameterName, paramMinLimit, paramMaxLimit):
@@ -158,7 +156,7 @@ def get_range_parameter(parameterName, paramMinLimit, paramMaxLimit):
 def save_attacked_image(image, attackedImagesTargetPath, imageName, imageExtension):
     savePath = "%s/%s.%s" % (attackedImagesTargetPath,
                              imageName, imageExtension)
-    util.save_image(image, savePath)
+    utils.save_image(image, savePath)
     return savePath
 
 
@@ -173,8 +171,8 @@ def rotation_cropped_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for rotationAngle in rotationAngles:
             # apply attack
@@ -203,8 +201,8 @@ def rotation_fitted_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for rotationAngle in rotationAngles:
             # apply attack
@@ -233,8 +231,8 @@ def crop_uniform_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for cropStep in cropSteps:
             # apply attack
@@ -294,15 +292,15 @@ def crop_nonuniform_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for cropSet in cropSets:
             # apply attack
             attackedImage = atk.crop_percentage(
                 originalImage,  tpSlice=cropSet)
             imageName = "%s_%s_%s" % (
-                originalImageName, attackName, util.format_filename(str(cropSet)))
+                originalImageName, attackName, utils.format_filename(str(cropSet)))
             # save image
             attackedImagePath = save_attacked_image(
                 attackedImage, attackedImagesTargetPath, imageName, "png")
@@ -324,8 +322,8 @@ def jpeg_quality_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for qualityStep in qualitySteps:
             # apply attack
@@ -354,8 +352,8 @@ def speckle_noise_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for sigmaStep in sigmaSteps:
             # apply attack
@@ -383,8 +381,8 @@ def salt_pepper_noise_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for sigmaStep in sigmaSteps:
             # apply attack
@@ -413,8 +411,8 @@ def gauss_noise_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for sigmaStep in sigmaSteps:
             # apply attack
@@ -443,8 +441,8 @@ def scale_uniform_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for scaleFactor in scaleFactors:
             # apply attack
@@ -502,15 +500,15 @@ def scale_nonuniform_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for scaleSet in scaleSets:
             # apply attack
             attackedImage = atk.scale(
                 originalImage,  **scaleSet)
             imageName = "%s_%s_%s" % (
-                originalImageName, attackName, util.format_filename(str(scaleSet)))
+                originalImageName, attackName, utils.format_filename(str(scaleSet)))
             # save image
             attackedImagePath = save_attacked_image(
                 attackedImage, attackedImagesTargetPath, imageName, "png")
@@ -532,8 +530,8 @@ def contrast_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for contrastFactor in contrastFactors:
             # apply attack
@@ -562,8 +560,8 @@ def gamma_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
         for gammaFactor in gammaFactors:
             # apply attack
@@ -591,12 +589,12 @@ def overlay_hook(originalImagesPathes, attackedImagesTargetPath):
     overlayImage = None
     overlayImageFilePath = None
     while True:
-        overlayImageFilePath = util.escape_home_in_path(
+        overlayImageFilePath = utils.escape_home_in_path(
             input("Overlay image: "))
-        if util.check_if_file_exists(overlayImageFilePath):
+        if utils.check_if_file_exists(overlayImageFilePath):
             # return all images in path as sorted list
             try:
-                overlayImage = util.load_image(overlayImageFilePath)
+                overlayImage = utils.load_image(overlayImageFilePath)
                 break
             except:
                 print("%s seems to be no image file." % overlayImageFilePath)
@@ -611,15 +609,15 @@ def overlay_hook(originalImagesPathes, attackedImagesTargetPath):
     originalImagesPathesResult = []
     attackedImagesPathesResult = []
     for originalImagePath in originalImagesPathes:
-        originalImage = util.load_image(originalImagePath)
-        originalImageName = util.get_filename_without_extension(
+        originalImage = utils.load_image(originalImagePath)
+        originalImageName = utils.get_filename_without_extension(
             originalImagePath)
 
         # apply attack
         attackedImage = atk.blend_pattern(
             originalImage,  aPatternImage=overlayImage)
         imageName = "%s_%s_%s" % (
-            originalImageName, attackName, util.get_filename_without_extension(overlayImageFilePath))
+            originalImageName, attackName, utils.get_filename_without_extension(overlayImageFilePath))
         # save image
         attackedImagePath = save_attacked_image(
             attackedImage, attackedImagesTargetPath, imageName, "png")
@@ -719,9 +717,9 @@ def add_custom_challenges():
         imgPath for imgPath in comparativeImages if re.search(regMatcher, imgPath)]
 
     # check whether every original has a comparative
-    originalImageNamesSet = set([util.get_filename_without_extension(
+    originalImageNamesSet = set([utils.get_filename_without_extension(
         imgPath) for imgPath in originalImages])
-    comparativeImageNames = [util.get_filename_without_extension(
+    comparativeImageNames = [utils.get_filename_without_extension(
         imgPath) for imgPath in comparativeImages]
     targetDecisions = [True if name[-1] ==
                        "S" else False for name in comparativeImageNames]
@@ -904,5 +902,5 @@ def attack_gamma():
 
 
 if __name__ == '__main__':
-    pm = Pmatch()
+    pm = Pihmatch()
     climenu.run()

@@ -6,9 +6,12 @@ from sqlitedict import SqliteDict
 import numpy as np
 
 
-class Pmatch:
-    def __init__(self):
-        self.db = SqliteDict(conf.DB_PATH)
+class Pihmatch(object):
+    def __init__(self, sDBPath=None):
+        if sDBPath is None and not hasattr(conf, "DB_PATH"):
+            raise Exception("Path to SQL-Database has to be defined")
+        sDBPath = sDBPath if sDBPath else conf.DB_PATH
+        self.db = SqliteDict(sDBPath)
 
     def add_challenge(self, sName, aOriginalImages, aComparativeImages, aTargetDecisions, dicMetadata={}):
         """ adds a challenge under the given name to the database """
@@ -132,37 +135,3 @@ class Pmatch:
         """ clears all tests """
         self.db[conf.DB_TESTS_KEY] = []
         self.db.commit()
-
-
-if __name__ == "__main__":
-    klaus = Pmatch()
-
-    # define one single challenge
-    sName = "printscan_printer1"
-    aOriginalImages = ["challenges/print_scan/d1/p1.tiff",
-                       "challenges/print_scan/d1/p2.tiff", "challenges/print_scan/d1/p3.tiff"]
-    aComparativeImages = ["challenges/print_scan/d1/c1.png",
-                          "challenges/print_scan/d1/c2.png", "challenges/print_scan/d1/c3.png"]
-    aTargetDecisions = [True, False, True]
-    dicMetadata = {"printer": "Epson XL3", "resolution": "200dip"}
-
-    klaus.clear_challenges()
-
-    klaus.add_challenge(sName, aOriginalImages,
-                        aComparativeImages, aTargetDecisions, dicMetadata)
-    print(klaus.get_challenges())
-
-    # def testalgo(a, b, p1="", p2=""):
-    #     """ algo mocking a test function """
-    #     print("i got p1 as %s | p2 as %s" % (p1, p2))
-    # return [True, True, True], {"algo": "ahash", "precision": 12,
-    # "threshold": 0.02}
-
-    # klaus.run_test(sName, testalgo, {})
-    # klaus.run_test(sName, testalgo, {"p1": 42})
-    # klaus.run_test(sName, testalgo, {"p1": 42, "p2": 33})
-    # klaus.run_test(sName, testalgo, {"p2": 98})
-
-    # print(klaus.get_tests())
-    # klaus.clear_tests()
-    # print(klaus.get_tests())
