@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+
+"""
+This module defines common functions to calculate the deviation between two hashes
+"""
+
+
 import numpy as np
 
 

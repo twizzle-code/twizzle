@@ -1,7 +1,5 @@
 """
-Image hashing library
-======================
-
+This module defines common perceptual image hashing algorithms that can be used as an example
 """
 
 import numpy

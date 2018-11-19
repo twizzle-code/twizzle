@@ -2,7 +2,7 @@
 
 
 from tabulate import tabulate
-from pihmatch import Pihmatch, attacks as atk, utils
+from pihmatch import Pihmatch, attacks_preset as atk, utils
 import pandas as pd
 import numpy as np
 import climenu
@@ -160,7 +160,7 @@ def save_attacked_image(image, attackedImagesTargetPath, imageName, imageExtensi
     return savePath
 
 
-########## attack hooks ##############################
+########## ---- BEGIN: attack hooks ---- ###############
 
 def rotation_cropped_hook(originalImagesPathes, attackedImagesTargetPath):
 
@@ -628,6 +628,9 @@ def overlay_hook(originalImagesPathes, attackedImagesTargetPath):
         len(originalImagesPathesResult), True, dtype=bool)
 
     return originalImagesPathesResult, attackedImagesPathesResult, targetDecisions, {"attack": attackName, "blend_image": overlayImageFilePath}
+
+
+########## ---- End: attack hooks ---- ###############
 
 
 def attack_challenge_creator(attackHook):

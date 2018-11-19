@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+
+""" This module defines many common utility functions used in the whole project
+"""
+
+
 import cv2
 import os
 import string

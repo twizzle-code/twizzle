@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+This module implements many common image manipulation attacks.
+Most of them can be used in the challenge creator.
+"""
+
+
 import numpy as np
 
 import cv2
