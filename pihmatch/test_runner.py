@@ -16,7 +16,7 @@ class TestRunner(object):
             sDBPath (str): Path to the SQLite database.
             lNrOfThreads (int): number of threads to use for the tests
         """
-        if lNrOfThreads >= 0:
+        if lNrOfThreads <= 0:
             raise Exception("lNrOfThreads has to be grater then 0")
         self.pm = Pihmatch(sDBPath)
         self.oPool = ThreadPool(processes=lNrOfThreads)
