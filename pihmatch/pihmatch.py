@@ -47,7 +47,7 @@ class Pihmatch(object):
             aComparativeImages (:obj:`list` of :obj:`str`): List of paths of the images that should be compared to 
                                                             the original image at the same position in the list
             aTargetDecisions (:obj:`list` of :obj:`bool`): List of boolean defining whether the images linked in aOriginalImages
-                                                            and aComparativeImagesbeeing at the same position in the list are
+                                                            and aComparativeImages beeing at the same position in the list are
                                                             the same (True) or not (False)
             dicMetadata (:obj:): an object defining metadata for the challenge like what printer was used or what kind of attack 
                                 using which parameters was performed

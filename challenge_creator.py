@@ -13,7 +13,7 @@ import re
 
 
 # adapt cli menu settings
-climenu.settings.text['main_menu_title'] = 'PIHMATCHA - Challenge creator\n=============================='
+climenu.settings.text['main_menu_title'] = 'PIHMATCH - Challenge creator\n=============================='
 climenu.settings.back_values = ['']
 
 
@@ -72,7 +72,7 @@ def get_source_image_path(target="original"):
             # return all images in path as sorted list
             return sorted(utils.list_all_images_in_directory(imagesPath))
         else:
-            print("path %s is not existend" % imagesPath)
+            print("path %s is not existent" % imagesPath)
             correctionDecision = input(
                 "would you like to correct it or quit [c/Q]: ")
             print(correctionDecision)
@@ -730,6 +730,8 @@ def add_custom_challenges():
                                     for name in comparativeImageNames])
 
     if (originalImageNamesSet ^ comparativeImageNamesSet):
+        print(originalImageNamesSet)
+        print(comparativeImageNamesSet)
         print("ERROR: We can not match all comparative images with original images.\nPlease check the amount of images and whether\nevery image has its counterpart and vice versa...Exit")
         sys.exit(1)
 
