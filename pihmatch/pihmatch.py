@@ -141,7 +141,7 @@ class Pihmatch(object):
         self._db[conf.DB_CHALLENGES_KEY] = []
         self._db.commit()
 
-    def run_test(self, sChallengeName, fnCallback, dicCallbackParameters={}):
+    def run_test(self, sChallengeName, fnCallback, dicCallbackParameters={}, autosave_to_db=False):
         """ run single challenge as test using given callback function and optional params
 
         Note:
@@ -168,7 +168,7 @@ class Pihmatch(object):
             dicCallbackParameters (:obj:): Dictionary defining parameters for the function in fnCallback
 
         Returns:
-            None
+            dicTest: dictionary of test results that can be saved to db
         """
         if not(sChallengeName) or not(fnCallback):
             raise Exception("Parameters are not allowed to be None.")
@@ -200,7 +200,10 @@ class Pihmatch(object):
         dicTest["errorrate"] = dErrorRate
 
         # save test in db
-        self.__save_test(dicTest)
+        if autosave_to_db:
+            self.__save_test(dicTest)
+
+        return dicTest
 
     def __save_test(self, dicTest):
         """ saves a test object to the database"""
@@ -211,6 +214,12 @@ class Pihmatch(object):
         aTests.append(dicTest)
         self._db[conf.DB_TESTS_KEY] = aTests
         self._db.commit()
+
+    def save_test_threadsafe(self, dicTest, lock):
+        """ saves a test object to the database threadsafe"""
+        lock.acquire()
+        self.__save_test(dicTest)
+        lock.release()
 
     def get_tests(self):
         """getting all tests

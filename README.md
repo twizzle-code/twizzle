@@ -31,7 +31,7 @@ In order to work with `sqlite3` please make sure your environment supports the p
 Clone the repository, change directory to the repository, create a new virtual environment (optional), run the installer script.
 
 ```bash
-python3 setup.py
+python3 setup.py install
 ```
 
 Now you should be ready to use PIHMATCH.

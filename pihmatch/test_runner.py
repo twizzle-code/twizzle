@@ -1,5 +1,6 @@
 from pihmatch import Pihmatch
 from multiprocessing.pool import ThreadPool
+from threading import Lock
 
 
 class TestRunner(object):
@@ -21,6 +22,7 @@ class TestRunner(object):
         self.pm = Pihmatch(sDBPath)
         self.oPool = ThreadPool(processes=lNrOfThreads)
         self.aTaskPoolThreads = []
+        self.lock = Lock()
 
     def run_test_async(self, sChallengeName, fnCallback, dicCallbackParameters={}):
         """add test run to threadpool
@@ -41,7 +43,8 @@ class TestRunner(object):
         """block execution till all threads are done"""
         # catch threads ready
         for pThread in self.aTaskPoolThreads:
-            pThread.get()
+            dicTest = pThread.get()
+            self.pm.save_test_threadsafe(dicTest, self.lock)
 
     def get_tests(self):
         """get all tests defined"""

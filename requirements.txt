@@ -6,3 +6,4 @@ pandas
 scikit-image
 blend_modes
 tabulate
+seaborn

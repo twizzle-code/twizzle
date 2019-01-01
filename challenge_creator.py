@@ -25,11 +25,11 @@ def show_challenges_helper(bShowIndex=False):
     dfChallenges = pd.DataFrame(aChallenges)
     dfChallenges["challenge_set_size"] = dfChallenges.apply(
         lambda row: len(row["targetDecisions"]), axis=1)
-    dfChallenges = dfChallenges.drop(
-        labels=["originalImages", "comparativeImages", "targetDecisions"],
-        axis=1)
-    dfChallenges.replace(np.nan, "", inplace=True)
-    print(tabulate(dfChallenges, headers='keys',
+    # dfChallenges = dfChallenges.drop(
+    #     labels=["originalImages", "comparativeImages", "targetDecisions"],
+    #     axis=1)
+    # dfChallenges.replace(np.nan, "", inplace=True)
+    print(tabulate(dfChallenges[["challenge", "challenge_set_size"]], headers='keys',
                    tablefmt='psql', showindex="never" if not bShowIndex else "always"))
     return dfChallenges["challenge"].tolist()
 
