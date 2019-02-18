@@ -60,10 +60,11 @@ The script provides you with three basic options: adding, showing and deleting c
 Add challenge
  1 : Add custom challenge
  2 : Add shuffled challenge
- 3 : Add attack challenge
+ 3 : Add sensitivity challenge
+ 4 : Add attack challenge
 ```
 
-### Custom challenge
+### (1) Custom challenge
 
 Custom challenges allow you to define you own original and comparative image datasets. You can use it whenever you want to know how your perceptional image hashing algorithms perform in a special filed of application. One example coud be to test how well your algorithm can match original images with a printed version of it. The structure of a challenge is the following:
 
@@ -97,7 +98,8 @@ The challenge creator helps you to define custom challenges.
 Add challenge
  1 : Add custom challenge
  2 : Add shuffled challenge
- 3 : Add attack challenge
+ 3 : Add sensitivity challenge
+ 4 : Add attack challenge
 
 Enter the selection ([""] to return, q to quit): 1
 
@@ -126,7 +128,7 @@ You can place originals and comparative images in the same folder. The naming co
 
 The attributes enable you to provide information you can base your filtering or grouping later on while analyzing your data. In the example above we provided the information which printer was printing the images and in what resolution.
 
-### Shuffled Challenge
+### (2) Shuffled Challenge
 
 Shuffled challenges help you to calculate the sensitivity of your perceptional image hashing algorithm. The challenge maker takes a set of images and forms groups of original images an randomly chosen comparative images from the given pool of images. A specified ratio of them can be compared to itself as kind of control group. A ratio of 0 means that all images compared to randomly chosen other images of the set. A ratio of `0.2` means that 40\% of images get its own as comparative image and the target matching decision will be set to `True` The rest will be compared with randomly chosen pictures of the given picture dataset and the target matching decision will be set to `False`.
 
@@ -134,7 +136,8 @@ Shuffled challenges help you to calculate the sensitivity of your perceptional i
 Add challenge
  1 : Add custom challenge
  2 : Add shuffled challenge
- 3 : Add attack challenge
+ 3 : Add sensitivity challenge
+ 4 : Add attack challenge
 
 Enter the selection ([""] to return, q to quit): 2
 shuffled challenge
@@ -148,7 +151,40 @@ Specify the ratio of matching images [0, 1]:
 ratio: 0.2
 ```
 
-## Attack Challenge
+## (3) Sensitivity Challenge
+
+Sensitivity challenges are the best way to measure the sensitivity of your perceptual image hashing algorithms. In this challenge method every image of an image set will be compared to a set of not matching images of the same image set. You can choose between selecting the number of compared images as absolute value or as percentage of the number of images. Use the first option if you have a huge amount of images in your image set and you want to compare each image to a representative randomly chosen subset only. Using the second option you can also compare every image in the set to every other image in the set. Be aware that the number of image to comparative-image comparisons increases by the number of images in the set `n` by `n * n-1`.
+
+```bash
+Add challenge
+ 1 : Add custom challenge
+ 2 : Add shuffled challenge
+ 3 : Add sensitivity challenge
+ 4 : Add attack challenge
+
+Enter the selection ([""] to return, q to quit): 3
+
+Challenge name: sensitivity1
+Specify a path to the original images.
+Original Images: exampledata/imagesets/dogs_subset
+Nr. of images found: 12
+
+
+Specify with how many not matching images of the image set each image will be compared.
+
+Do you want to define the number of comparative images per image as absolute value or as percentage of the image set?
+selection [a - absolute | p - percentage]: p
+
+Number of images in imageset: 12
+
+Specify with how many images (percent of the image set) each image should be compared with [0, 1]:
+percent: 1
+
+resulting nr. of compared images: 11
+Added sensitivity challenge
+```
+
+## (4) Attack Challenge
 
 The standard case for the perceptual image hashing algorithms to be good is the recognition of images as such even after they have been manipulated. In oder to test the robustness of different ways of manipulation the challenge creator has a set of attacks implemented that it can apply to pictures. You can attack a set of images with an attack of your choice. For the most attacks you can even set a range and increment of a parameter whereupon the challenge creator will attack all images in the set several times with varying parameters. Here is an example of the `JPEG-Quality` attack:
 
@@ -156,9 +192,10 @@ The standard case for the perceptual image hashing algorithms to be good is the 
 Add challenge
  1 : Add custom challenge
  2 : Add shuffled challenge
- 3 : Add attack challenge
+ 3 : Add sensitivity challenge
+ 4 : Add attack challenge
 
-Enter the selection ([""] to return, q to quit): 3
+Enter the selection ([""] to return, q to quit): 4
 
 Add attack challenge
  1 : Rotation (cropped)

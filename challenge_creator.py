@@ -70,7 +70,16 @@ def get_source_image_path(target="original"):
             input(inputLabel))
         if utils.check_if_path_exists(imagesPath):
             # return all images in path as sorted list
-            return sorted(utils.list_all_images_in_directory(imagesPath))
+            imagePathes = sorted(
+                utils.list_all_images_in_directory(imagesPath))
+            nrOfImagesFound = len(imagePathes)
+
+            if len(imagePathes) == 0:
+                print(
+                    "path %s contains no images we can read\n...try again\n\n" % imagesPath)
+                continue
+            print("Nr. of images found: %s" % nrOfImagesFound)
+            return imagePathes
         else:
             print("path %s is not existent" % imagesPath)
             correctionDecision = input(
@@ -821,6 +830,108 @@ def add_shuffle_challenges():
                      comparativeImages, targetDecisions)
 
     print("Added shuffled challenge")
+
+
+@add_challenge_group.menu(title='Add sensitivity challenge')
+def add_sensitivity_challenges():
+    print("sensitivity challenge")
+
+    # take a set of images and compare each of them to a set of random
+    # not matching images
+
+    challengeName = get_challenge_name()
+
+    originalImagesPathes = get_source_image_path(target="original")
+
+    numberOfOriginalImages = len(originalImagesPathes)
+
+    print("\n\nSpecify with how many not matching images of the image set each image will be compared.")
+    print("\nDo you want to define the number of comparative images per image as absolute value or as percentage of the image set?\n")
+
+    while True:
+        selection = input(
+            "selection [a - absolute | p - percentage]: ").lower().strip()
+        if selection != "a" and selection != "p":
+            print("selection %s is not valid" % (selection))
+            continue
+        else:
+            break
+
+    print("\nNumber of images in imageset: %s\n" % numberOfOriginalImages)
+
+    numberOfComparativeImagesPerImage = 0
+
+    metaData = {}
+
+    if selection == "p":
+        # get percent of the image set per image that will be compared
+        paramMinLimit = 0
+        paramMaxLimit = 1
+        print("Specify with how many images (percent of the image set) each image should be compared with [%s, %s]:" % (
+            str(paramMinLimit), str(paramMaxLimit)))
+        while True:
+            nrOfImages = input("percent: ")
+            try:
+                ratioFloat = float(nrOfImages)
+            except:
+                print("input is no number")
+                continue
+            if (paramMinLimit <= ratioFloat <= paramMaxLimit):
+                numberOfComparativeImagesPerImage = math.floor(
+                    (numberOfOriginalImages-1) * ratioFloat)
+                if numberOfComparativeImagesPerImage < 1:
+                    numberOfComparativeImagesPerImage = 1
+                metaData["compared_images_percentage"] = ratioFloat
+                print("\nresulting nr. of compared images: %s" %
+                      numberOfComparativeImagesPerImage)
+                break
+            else:
+                print("input %f is bigger or smaller as domain of ratio[%s, %s]" % (
+                    ratioFloat, str(paramMinLimit), str(paramMaxLimit)))
+                continue
+
+    if selection == "a":
+        # get absolute number of comparative images
+        paramMinLimit = 1
+        paramMaxLimit = numberOfOriginalImages-1
+        print("Specify with how many images each image should be compared with [%s, %s]:" % (
+            str(paramMinLimit), str(paramMaxLimit)))
+        while True:
+            nrOfImages = input("nr. of images: ")
+            try:
+                numberOfComparativeImagesPerImage = int(nrOfImages)
+            except:
+                print("input is no number")
+                continue
+            if (paramMinLimit <= numberOfComparativeImagesPerImage <= paramMaxLimit):
+                break
+            else:
+                print("input %f is bigger or smaller as domain of ratio[%s, %s]" % (
+                    numberOfComparativeImagesPerImage, str(paramMinLimit), str(paramMaxLimit)))
+                continue
+    originalImages = []
+    comparativeImages = []
+    targetDecisions = np.full(
+        numberOfComparativeImagesPerImage * len(originalImagesPathes), False, dtype=bool)
+
+    originalImagesPathesNumpyArray = np.array(originalImagesPathes)
+    for originalImage in originalImagesPathes:
+        originalImages.extend(
+            np.full(numberOfComparativeImagesPerImage, originalImage))
+
+        filteredImageList = originalImagesPathesNumpyArray[
+            originalImagesPathesNumpyArray != originalImage]
+
+        comparativeImagesChoices = np.random.choice(
+            filteredImageList, replace=False, size=numberOfComparativeImagesPerImage)
+        comparativeImages.extend(comparativeImagesChoices)
+
+    metaData["nr_of_compared_images_per_image"] = numberOfComparativeImagesPerImage
+
+    pm.add_challenge(challengeName, originalImages,
+                     comparativeImages, targetDecisions, metaData)
+
+    print("Added sensitivity challenge")
 
 
 @add_challenge_group.group(title="Add attack challenge")
