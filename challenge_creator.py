@@ -13,7 +13,7 @@ import re
 
 
 # adapt cli menu settings
-climenu.settings.text['main_menu_title'] = 'PIHMATCH - Challenge creator\n=============================='
+climenu.settings.text['main_menu_title'] = 'Twizzle - Challenge creator\n=============================='
 climenu.settings.back_values = ['']
 
 
@@ -1018,5 +1018,6 @@ def attack_gamma():
 
 
 if __name__ == '__main__':
-    pm = Pihmatch()
+    db_path = input("Enter the path of the database: ")
+    pm = Pihmatch(db_path)
     climenu.run()

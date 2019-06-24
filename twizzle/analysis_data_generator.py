@@ -1,13 +1,13 @@
 
 import pandas as pd
-from pihmatch import Pihmatch
+from twizzle import Twizzle
 
 
 class AnalysisDataGenerator(object):
     """Generator for analysis data in pandas format
     """
 
-    def __init__(self, sDBPath=None):
+    def __init__(self, sDBPath):
         """Constructor of the AnalysisDataGenerator class
 
         Note:
@@ -16,11 +16,13 @@ class AnalysisDataGenerator(object):
         Args:
             sDBPath (str): Path to the SQLite database.
         """
-        pm = Pihmatch(sDBPath)
-        dfChallenges = pd.DataFrame(pm.get_challenges())
+        if sDBPath is None:
+            raise Exception("Path to SQL-Database has to be defined")
+        tw = Twizzle(sDBPath)
+        dfChallenges = pd.DataFrame(tw.get_challenges())
         if dfChallenges.empty:
             raise Exception("currently there are no challenges defined yet")
-        dfTests = pd.DataFrame(pm.get_tests())
+        dfTests = pd.DataFrame(tw.get_tests())
         if dfTests.empty:
             raise Exception("currently no test have been run yet")
 

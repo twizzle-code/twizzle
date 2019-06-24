@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-import config as conf
-
 from sqlitedict import SqliteDict
 import numpy as np
 
+DB_CHALLENGES_KEY = 'challenges'
+DB_TESTS_KEY = 'tests'
 
-class Pihmatch(object):
-    """Perceptual Image Hashing Matching Challenge -- Backbone
+
+class Twizzle(object):
+    """Twizzle benchmarking system -- base class
     """
 
-    def __init__(self, sDBPath=None):
-        """Constructor of the Pihmatch class
+    def __init__(self, sDBPath):
+        """Constructor of the Twizzle class
 
         Note:
-            Please define the `DB_PATH` in the config.py or pass the path of the SQLite 
+            Please pass the path of the SQLite 
             as parameter
         Args:
             sDBPath (str): Path to the SQLite database.
         """
-        if sDBPath is None and not hasattr(conf, "DB_PATH"):
+        if sDBPath is None:
             raise Exception("Path to SQL-Database has to be defined")
-        sDBPath = sDBPath if sDBPath else conf.DB_PATH
         self._db = SqliteDict(sDBPath)
 
     def add_challenge(self, sName, aOriginalImages, aComparativeImages, aTargetDecisions, dicMetadata={}):
@@ -69,7 +69,7 @@ class Pihmatch(object):
             raise Exception("The target decisions have to be boolean only.")
 
         # get current challenges from database
-        aChallenges = self._db.get(conf.DB_CHALLENGES_KEY, [])
+        aChallenges = self._db.get(DB_CHALLENGES_KEY, [])
 
         # test whether name was used before
         aChallengesSameName = [
@@ -85,7 +85,7 @@ class Pihmatch(object):
         if dicMetadata:
             dicChallenge = {**dicMetadata, **dicChallenge}
         aChallenges.append(dicChallenge)
-        self._db[conf.DB_CHALLENGES_KEY] = aChallenges
+        self._db[DB_CHALLENGES_KEY] = aChallenges
         self._db.commit()
 
     def del_challenge(self, sName):
@@ -99,7 +99,7 @@ class Pihmatch(object):
         """
 
         # get current challenges from database
-        aChallenges = self._db.get(conf.DB_CHALLENGES_KEY, [])
+        aChallenges = self._db.get(DB_CHALLENGES_KEY, [])
         aMatches = [ch for ch in aChallenges if ch["challenge"] == sName]
         if len(aMatches) == 0:
             raise Exception("No challenge named %s found." % sName)
@@ -108,7 +108,7 @@ class Pihmatch(object):
         aChallenges.remove(aMatches[0])
 
         # save new db
-        self._db[conf.DB_CHALLENGES_KEY] = aChallenges
+        self._db[DB_CHALLENGES_KEY] = aChallenges
         self._db.commit()
 
     def get_challenges(self):
@@ -117,7 +117,7 @@ class Pihmatch(object):
         Returns:
             :obj:`list` of :obj:: `obj`:  List of all defined challenges
         """
-        return self._db.get(conf.DB_CHALLENGES_KEY, [])
+        return self._db.get(DB_CHALLENGES_KEY, [])
 
     def get_challenge(self, sChallengeName):
         """ getting a single challenge object
@@ -128,7 +128,7 @@ class Pihmatch(object):
           Returns:
             :obj:: `obj`:  Object defining the challenge having the name sChallengeName
         """
-        aChallenges = self._db.get(conf.DB_CHALLENGES_KEY, [])
+        aChallenges = self._db.get(DB_CHALLENGES_KEY, [])
         aMatches = [ch for ch in aChallenges if ch["challenge"]
                     == sChallengeName]
         if len(aMatches) == 0:
@@ -138,7 +138,7 @@ class Pihmatch(object):
 
     def clear_challenges(self):
         """ clears all challenge entries from the database """
-        self._db[conf.DB_CHALLENGES_KEY] = []
+        self._db[DB_CHALLENGES_KEY] = []
         self._db.commit()
 
     def run_test(self, sChallengeName, fnCallback, dicCallbackParameters={}, autosave_to_db=False):
@@ -194,10 +194,35 @@ class Pihmatch(object):
             np.array(aDecisions) != np.array(aTargetDecisions))
         dErrorRate = lErrors / lTestsetSize
 
+        lTP = np.sum(np.logical_and(
+            aDecisions == True, aTargetDecisions == True))
+        lTN = np.sum(np.logical_and(
+            aDecisions == False, aTargetDecisions == False))
+        lFP = np.sum(np.logical_and(
+            aDecisions == True, aTargetDecisions == False))
+        lFN = np.sum(np.logical_and(
+            aDecisions == False, aTargetDecisions == True))
+        dAccuracy = (lTP+lTN)/(lTP+lTN+lFP+lFN)
+        dPrecision = lTP/(lTP+lFP)
+        dRecall = lTP/(lTP+lFN)
+        dF1score = 2*((dPrecision*dRecall)/(dPrecision+dRecall))
+        dFAR = lFP/(lFP + lTN)
+        dFRR = lFP/(lFP + lTN)
+
         # fill test object
         dicTest = dicAdditionalInformation
         dicTest["challenge"] = sChallengeName
         dicTest["errorrate"] = dErrorRate
+        dicTest["TP"] = lTP
+        dicTest["TN"] = lTN
+        dicTest["FP"] = lFP
+        dicTest["FN"] = lFN
+        dicTest["accuracy"] = dAccuracy
+        dicTest["recall"] = dRecall
+        dicTest["precision"] = dPrecision
+        dicTest["F1_score"] = dF1score
+        dicTest["FAR"] = dFAR
+        dicTest["FRR"] = dFRR
 
         # save test in db
         if autosave_to_db:
@@ -210,9 +235,9 @@ class Pihmatch(object):
         if not dicTest:
             raise Exception("Test object must not be None.")
 
-        aTests = self._db.get(conf.DB_TESTS_KEY, [])
+        aTests = self._db.get(DB_TESTS_KEY, [])
         aTests.append(dicTest)
-        self._db[conf.DB_TESTS_KEY] = aTests
+        self._db[DB_TESTS_KEY] = aTests
         self._db.commit()
 
     def save_test_threadsafe(self, dicTest, lock):
@@ -227,9 +252,9 @@ class Pihmatch(object):
         Returns:
             :obj:`list` of :obj:: `obj`:  List of all tests executed
         """
-        return self._db.get(conf.DB_TESTS_KEY, [])
+        return self._db.get(DB_TESTS_KEY, [])
 
     def clear_tests(self):
         """ delete all tests from the database """
-        self._db[conf.DB_TESTS_KEY] = []
+        self._db[DB_TESTS_KEY] = []
         self._db.commit()
