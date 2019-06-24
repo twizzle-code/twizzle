@@ -8,7 +8,7 @@ DB_TESTS_KEY = 'tests'
 
 
 class Twizzle(object):
-    """Twizzle benchmarking system -- base class
+    """Twizzle multi purpose benchmarking system -- base class
     """
 
     def __init__(self, sDBPath):
@@ -24,21 +24,17 @@ class Twizzle(object):
             raise Exception("Path to SQL-Database has to be defined")
         self._db = SqliteDict(sDBPath)
 
-    def add_challenge(self, sName, aOriginalImages, aComparativeImages, aTargetDecisions, dicMetadata={}):
+    def add_challenge(self, sName, aOriginalObjects, aComparativeObjects, aTargetDecisions, dicMetadata={}):
         """Adds a challenge under the given name to the database
 
         Note:
             The three lists describe a table of the following format:
 
-            | Original image | Comparative image | target decision |
+            | Original object | Comparative object | target decision |
             |----------------|-------------------|-----------------|
             | Img1.png       | Img1_scaled.png   | True            |
             | Img2.png       | Img2_brighter.png | True            |
             | Img2.png       | Img9.png          | False           |
-
-            In thisexample the tested perceptual image hashing algorithm would generate a hash for Img1.png and
-            Img1_scaled.png, compare them based on a deviationfunction and decide for True (is the same image) or
-            False (is not the same image).
 
 
         Args:
@@ -57,14 +53,14 @@ class Twizzle(object):
         """
 
         # catch wrong parameters
-        if (not sName) or (aOriginalImages is None) or (aComparativeImages is None) or (aTargetDecisions is None):
+        if (not sName) or (aOriginalObjects is None) or (aComparativeObjects is None) or (aTargetDecisions is None):
             raise Exception("Parameters can not be None.")
-        if not(len(aOriginalImages) == len(aComparativeImages) == len(aTargetDecisions)):
+        if not(len(aOriginalObjects) == len(aComparativeObjects) == len(aTargetDecisions)):
             raise Exception(
                 "Image sets and target decisions have to have the same amount of entries.")
-        if not (all(isinstance(x, str) for x in aOriginalImages) and all(isinstance(x, str) for x in aComparativeImages)):
+        if not (all(isinstance(x, str) for x in aOriginalObjects) and all(isinstance(x, str) for x in aComparativeObjects)):
             raise Exception(
-                "All images have to be defined as path given as string.")
+                "All objects have to be defined as path given as string.")
         if (not all(isinstance(x, bool) for x in aTargetDecisions)) and not isinstance(aTargetDecisions, np.ndarray) and not (aTargetDecisions.dtype == np.dtype("bool")):
             raise Exception("The target decisions have to be boolean only.")
 
@@ -79,8 +75,8 @@ class Twizzle(object):
                 "Challenge name %s is already in use. Define an other one. Aborting." % sName)
 
         # append new challenge
-        dicChallenge = {"challenge": sName, "originalImages": aOriginalImages,
-                        "comparativeImages": aComparativeImages, "targetDecisions": aTargetDecisions}
+        dicChallenge = {"challenge": sName, "originalObjects": aOriginalObjects,
+                        "comparativeObjects": aComparativeObjects, "targetDecisions": aTargetDecisions}
         # adding additional information if given
         if dicMetadata:
             dicChallenge = {**dicMetadata, **dicChallenge}
@@ -148,23 +144,23 @@ class Twizzle(object):
             fnCallback has to fullfill following specifications
 
             Parameters:
-            fnCallback(aOriginalImages, aComparativeImages, **dicCallbackParameters)
-            - aOriginalImages: list of strings describing paths to original images
-            - aComparativeImages: list of strings describing paths to comparative images
+            fnCallback(aOriginalObjects, aComparativeObjects, **dicCallbackParameters)
+            - aOriginalObjects: list of strings describing paths to original objects
+            - aComparativeObjects: list of strings describing paths to comparative objects
             ... arbitrary number of further parameters
 
             Returns:
             aDecisions, dicAdditionalInformation = fnCallback(...)
-            - aDecisions: list of boolean decisions describing wether the algorithm has decided that the original image 
-                          and the comparative image are the same (True) or not (False)
+            - aDecisions: list of boolean decisions describing wether the algorithm has decided that the original object 
+                          and the comparative objects are the same (True) or not (False)
             - dicAdditionalInformation: the algorithm can supply additional information that can be used in the evaluation 
                                         later on to compare different settings
 
 
         Args:
             sChallengeName (str): the challenge that should be executed
-            fnCallback (function): Pointer to wrapper-function that tests a challenge on a specific image hashing algorithm
-                                    and makes decisions whether the images are the same or not depending on its decision algorithm
+            fnCallback (function): Pointer to wrapper-function that tests a challenge on a specific algorithm
+                                    and makes decisions whether the objects are the same or not depending on its decision algorithm
             dicCallbackParameters (:obj:): Dictionary defining parameters for the function in fnCallback
 
         Returns:
@@ -175,18 +171,18 @@ class Twizzle(object):
 
         dicChallenge = self.get_challenge(sChallengeName)
         sChallengeName = dicChallenge["challenge"]
-        aOriginalImages = dicChallenge["originalImages"]
-        aComparativeImages = dicChallenge["comparativeImages"]
+        aOriginalObjects = dicChallenge["originalObjects"]
+        aComparativeObjects = dicChallenge["comparativeObjects"]
         aTargetDecisions = dicChallenge["targetDecisions"]
 
         # run challenge
         aDecisions, dicAdditionalInformation = fnCallback(
-            aOriginalImages, aComparativeImages, **dicCallbackParameters)
+            aOriginalObjects, aComparativeObjects, **dicCallbackParameters)
 
         # check if site of decisions is right
         if len(aDecisions) != len(aTargetDecisions):
             raise Exception(
-                "Array of Decisions is not the same size as given set of images. Aborting.")
+                "Array of Decisions is not the same size as given set of objects. Aborting.")
 
         # calculate errorate
         lTestsetSize = len(aTargetDecisions)
