@@ -8,7 +8,7 @@ python distribute file
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def requirements_file_to_list(fn="requirements.txt"):
@@ -20,9 +20,9 @@ def requirements_file_to_list(fn="requirements.txt"):
 
 
 setup(
-    name="pihmatch",
-    version="0.1.0",
-    packages=find_packages(),
+    name="twizzle",
+    version="0.1.1",
+    packages=["twizzle"],
     install_requires=requirements_file_to_list(),
     dependency_links=[
         # If your project has dependencies on some internal packages that is
@@ -37,10 +37,12 @@ setup(
     package_data={
         # 'mypkg': ['logger.conf']
     },
-    author="Robin Herrmann",
-    author_email="robin.herrmann@tu-dresden.de",
-    description="A suite for testing Perceptual Image Hashing algorithms that should be used for content identification.",
+    platforms=['Linux'],
+    author="Robin H.",
+    author_email="twizzle@gmx.net",
+    description="A multi-purpose benchmarking framework",
     long_description=open('README.md').read(),
-    license="GPLv2+",
-    url="",
+    long_description_content_type="text/markdown",
+    license="GNU GPLv3",
+    url="https://github.com/twizzle-code/twizzle",
 )

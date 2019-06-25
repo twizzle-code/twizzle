@@ -1,9 +1,13 @@
-opencv-python
 numpy
 sqlitedict
-climenu
 pandas
+
+## packages used for CLI menu
+climenu
+tabulate
+
+## packages used for attacks
+opencv-python
 scikit-image
 blend_modes
-tabulate
 seaborn

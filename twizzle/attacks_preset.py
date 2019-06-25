@@ -11,7 +11,7 @@ import numpy as np
 import cv2
 # from scipy import ndimage
 from skimage import exposure
-from blend_modes import blend_modes
+import blend_modes
 from skimage import util
 from skimage import img_as_float
 from skimage import img_as_ubyte
